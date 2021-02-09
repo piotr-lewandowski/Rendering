@@ -7,7 +7,7 @@ namespace Rendering
 {
     static class SupportMatrices
     {
-        public static Matrix4x4 ViewMatrix { get; } = new Matrix4x4(
+        public static Matrix4x4 ViewMatrix { get; } = new (
             0, 1, 0, -0.5f,
             0, 0, 1, -0.5f,
             1, 0, 0, -3,
