@@ -10,14 +10,17 @@ namespace Rendering.PolygonFill
 {
     class Polygon
     {
+        public Vector3 NormalVector { get; }
         protected Vertex[] _vertices;
         protected List<Edge> _activeEdges;
         private CubesImage cubesImage;
         private int colorInt;
-        public Polygon(Vector3[] points)
+        private Color _color;
+        public Polygon(Vector3[] points, Vector3 normalVector)
         {
+            NormalVector = normalVector;
             var n = points.Length;
-            _vertices = points.Select(p => new Vertex(p)).ToArray();
+            _vertices = points.Select(p => new Vertex(p,normalVector)).ToArray();
 
             for (int i = 0; i < n; ++i)
             {
@@ -32,7 +35,7 @@ namespace Rendering.PolygonFill
             int tmpColor = color.R << 16; // R
             tmpColor |= color.G << 8;   // G
             tmpColor |= color.B << 0;   // B
-
+            _color = color;
             colorInt = tmpColor;
 
             _vertices = _vertices.OrderBy(v => v.iY).ToArray();
@@ -85,7 +88,7 @@ namespace Rendering.PolygonFill
                         continue;
 
                     cubesImage.ZIndex[x, currentY] = z;
-                    cubesImage.ColorsArray[x, currentY] = colorInt;
+                    cubesImage.ColorsArray[x, currentY] = GetColor(_vertices[0], _color);
                 }
             }
 
@@ -93,6 +96,54 @@ namespace Rendering.PolygonFill
             {
                 edge.CurrentX += edge.SlopeX;
             }
+        }
+
+
+        private double Ka { get; } = 0.2d;
+        private double Kd { get; } = 0.7d;
+        private double Ks { get; } = 0.5d;
+        private double M { get; } = 50;
+
+        private int GetColor(Vertex vertex, Color color)
+        {
+            var lightColor = Colors.White;
+            var il = new Vector3(lightColor.R, lightColor.G, lightColor.B);
+            il = il / 255;
+            var io = color;
+            var l =  -new Vector3(vertex.fX, vertex.fY+200, vertex.fZ-1000);
+            var n = vertex.NormalVector;
+            var v = new Vector3(0, 0, 1);
+
+            l = Vector3.Normalize(l);
+            n = Vector3.Normalize(n);
+
+            var r = new Vector3(
+                (2 * Vector3.Dot(n, l) * n.X) - l.X,
+                (2 * Vector3.Dot(n, l) * n.Y) - l.Y,
+                (2 * Vector3.Dot(n, l) * n.Z) - l.Z);
+            r = Vector3.Normalize(r);
+
+            var pow = Math.Pow(Vector3.Dot(v, r), M);
+            var dot = Math.Abs(Vector3.Dot(n, l));
+
+            var calculatedR = Ka * color.R + Kd * il.X * io.R * dot + Ks * il.X * io.R * pow;
+            var calculatedG = Ka * color.G + Kd * il.Y * io.G * dot + Ks * il.Y * io.G * pow;
+            var calculatedB = Ka * color.B + Kd * il.Z * io.B * dot + Ks * il.Z * io.B * pow;
+
+            calculatedR = Math.Abs(calculatedR);
+            calculatedG = Math.Abs(calculatedG);
+            calculatedB = Math.Abs(calculatedB);
+
+            var resR = calculatedR > 255 ? (byte) 255 : (byte) calculatedR;
+            var resG = calculatedG > 255 ? (byte) 255 : (byte) calculatedG;
+            var resB = calculatedB > 255 ? (byte) 255 : (byte) calculatedB;
+
+
+            int tmpColor = resR << 16; // R
+            tmpColor |= resG << 8;   // G
+            tmpColor |= resB << 0;   // B
+
+            return tmpColor;
         }
 
         private float InterpolateZ(int x, int y)
