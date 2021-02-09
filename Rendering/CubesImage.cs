@@ -10,9 +10,9 @@ using System.Windows.Media.Imaging;
 
 namespace Rendering
 {
-    class CubesImage : Canvas
+    public class CubesImage : Canvas
     {
-        public Cube[] Cubes { get; set; }
+        public Figure[] Figures { get; set; }
         public Matrix4x4 Projection { get; set; }
         public Matrix4x4 View { get; set; }
         private float _fov;
@@ -43,7 +43,7 @@ namespace Rendering
 
         public CubesImage()
         {
-            Cubes = new[] { new Cube(this, SupportMatrices.ModelMatrix1), new Cube(this, SupportMatrices.ModelMatrix2) };
+            Figures = new Figure[] { new Cube(this, SupportMatrices.ModelMatrix1(50)), new Cube(this, SupportMatrices.ModelMatrix2(0)) };
             View = SupportMatrices.ViewMatrix;
         }
 
@@ -54,9 +54,9 @@ namespace Rendering
 
         protected override void OnRender(DrawingContext dc)
         {
-            foreach (var cube in Cubes)
+            foreach (var figure in Figures)
             {
-                cube.Draw();
+                figure.Draw();
             }
 
             unsafe

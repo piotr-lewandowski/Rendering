@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
@@ -16,9 +17,6 @@ using System.Windows.Shapes;
 
 namespace Rendering
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private static IProgress<float> _progress;
@@ -36,10 +34,13 @@ namespace Rendering
 
         private void RotateCube(float a)
         {
-            foreach (var cube in CubesImage.Cubes)
+            foreach (var figure in CubesImage.Figures)
             {
-                cube._angle = (cube._angle + 1f) % 360;
-                cube.Rotate(cube._angle);
+                if (figure is Cube cube)
+                {
+                    var radians = 1f.ToRadians();
+                    cube.Model *= Matrix4x4.CreateRotationX(radians);
+                }
             }
             CubesImage.InvalidateVisual();
         }

@@ -42,7 +42,7 @@ namespace Rendering
             return Matrix4x4.CreatePerspectiveFieldOfView(fov, a, n, f);
         }
 
-        public static float ToRadians(float degrees)
+        public static float ToRadians(this float degrees)
         {
             return degrees * MathF.PI / 180;
         }
