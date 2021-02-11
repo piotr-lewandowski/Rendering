@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Rendering.Figures;
 
 namespace Rendering
 {
@@ -25,27 +26,39 @@ namespace Rendering
         {
             InitializeComponent();
 
-            _progress = new Progress<float>(RotateCube);
-            var timer = new Timer(17);
+            _progress = new Progress<float>(MoveScene);
+            var timer = new Timer(34);
             timer.Elapsed += OnTimedEvent;
             timer.AutoReset = true;
             timer.Enabled = true;
         }
 
-        private void RotateCube(float a)
+        private int _movementCounter = 600;
+
+        private void MoveScene(float a)
         {
-            var c = CubesImage.Figures[0] as Cube;
-
-           // c.TranslationVector += Vector3.UnitZ;
-
-            foreach (var figure in CubesImage.Figures)
+            var c1 = CubesImage.Figures[0] as Cube; 
+            var translation = new Vector3(0, 0, 0.01f);
+            if (_movementCounter >= 300)
             {
-                if (figure is Cube cube)
-                {
-                    var radians = 1f.ToRadians();
-                    cube.RotationQuaternion *= Quaternion.CreateFromAxisAngle(Vector3.UnitX, radians);
-                }
+                c1.TranslationVector += translation;
+                CubesImage.Cameras[0].Position += translation;
+                CubesImage.Cameras[1].Target += translation;
             }
+            else
+            {
+                c1.TranslationVector -= translation;
+                CubesImage.Cameras[0].Position -= translation;
+                CubesImage.Cameras[1].Target -= translation;
+            }
+            _movementCounter = (_movementCounter + 1) % 600;
+
+            var c2 = CubesImage.Figures[1] as Cube;
+            c2.RotationQuaternion *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, 1f.ToRadians());
+            
+            var c3 = CubesImage.Figures[2] as Cube;
+            c3.RotationQuaternion *= Quaternion.CreateFromAxisAngle(Vector3.UnitX, 1f.ToRadians());
+
             CubesImage.InvalidateVisual();
         }
 
@@ -58,6 +71,19 @@ namespace Rendering
         private static void OnTimedEvent(object source, ElapsedEventArgs e)
         {
             _progress.Report(0);
+        }
+
+        private void ChangeCamera1(object sender, RoutedEventArgs e)
+        {
+            CubesImage.CurrentCamera = CubesImage.Cameras[0];
+        }
+        private void ChangeCamera2(object sender, RoutedEventArgs e)
+        {
+            CubesImage.CurrentCamera = CubesImage.Cameras[1];
+        }
+        private void ChangeCamera3(object sender, RoutedEventArgs e)
+        {
+            CubesImage.CurrentCamera = CubesImage.Cameras[2];
         }
     }
 }

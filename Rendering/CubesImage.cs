@@ -7,14 +7,18 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Rendering.Figures;
 
 namespace Rendering
 {
     public class CubesImage : Canvas
     {
+        public LightSource[] LightSources { get; set; }
+        public Camera[] Cameras { get; set; }
+        public Camera CurrentCamera { get; set; }
         public Figure[] Figures { get; set; }
         public Matrix4x4 Projection { get; set; }
-        public Matrix4x4 View { get; set; }
+        public Matrix4x4 View => CurrentCamera.ViewMatrix;
         private float _fov;
         private float _aspectRatio;
         public float Fov
@@ -45,11 +49,40 @@ namespace Rendering
         {
             Figures = new Figure[]
             {
-                //new Cube(this), 
-                //new Cube(this),
-                new Sphere(this)
+                new Cube(this, Colors.BurlyWood)
+                {
+                    TranslationVector = new Vector3(0,1,1),
+                }, 
+                new Cube(this, Colors.Crimson)
+                {
+                    TranslationVector = new Vector3(0,2.5f,1)
+                },
+                new Cube(this, Colors.Orange)
+                {
+                    TranslationVector = new Vector3(0,-1.5f,1)
+                },
+                new Sphere(this, Colors.BlueViolet)
+                {
+                    TranslationVector = new Vector3(2,0,0)
+                },
+                new Square(this, Colors.ForestGreen)
+                {
+                    RotationQuaternion = Quaternion.CreateFromAxisAngle(Vector3.UnitX, -MathF.PI/2),
+                    TranslationVector = new Vector3(-1,-1,6),
+                    Scale = 5
+                }
             };
-            View = SupportMatrices.ViewMatrix;
+            Cameras = new[]
+            {
+                new Camera(new Vector3(5, 0.5f, 0.5f), new Vector3(0, 0.5f, 0.5f), new Vector3(0, 0, 1)),
+                new Camera(new Vector3(5, 0.5f, 0.5f), new Vector3(0, 0.5f, 0.5f), new Vector3(0, 0, 1)),
+                new Camera(new Vector3(5, 0.5f, 0.5f), new Vector3(0, 0.5f, 0.5f), new Vector3(0, 0, 1))
+            };
+            CurrentCamera = Cameras[0];
+            LightSources = new[]
+            {
+                new LightSource(Colors.White, new Vector3(0, 0.5f, 0.5f))
+            };
         }
 
         void UpdateProjectionMatrix()

@@ -10,20 +10,24 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition/>
-            <RowDefinition Height="30"/>
+            <RowDefinition Height="100"/>
         </Grid.RowDefinitions>
         <local:CubesImage  
             x:Name="CubesImage" Grid.Row="0"/>
 
-        <StackPanel  Grid.Row="1" Orientation="Horizontal"
-        >
-            <Label Content="{Binding Value, ElementName=FovSlider}"/>
-            <Slider Name="FovSlider" Value="85"
-                    ValueChanged="Fov_Slider_ValueChanged"
-                    VerticalAlignment="Center" Width="200"
-                    Minimum="10" Maximum="150" 
-                    TickFrequency="1" IsSnapToTickEnabled="True"/>
+        <StackPanel Grid.Row="1" Orientation="Vertical">
+            <StackPanel Orientation="Horizontal">
+                <Label Content="{Binding Value, ElementName=FovSlider}"/>
+                <Slider Name="FovSlider" Value="85"
+                        ValueChanged="Fov_Slider_ValueChanged"
+                        VerticalAlignment="Center" Width="200"
+                        Minimum="10" Maximum="150" 
+                        TickFrequency="1" IsSnapToTickEnabled="True"/>
 
+            </StackPanel>
+            <Button Click="ChangeCamera1">Camera 1</Button>
+            <Button Click="ChangeCamera2">Camera 2</Button>
+            <Button Click="ChangeCamera3">Camera 3</Button>
         </StackPanel>
     </Grid>
 </Window>
