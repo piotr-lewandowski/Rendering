@@ -34,12 +34,16 @@ namespace Rendering
 
         private void RotateCube(float a)
         {
+            var c = CubesImage.Figures[0] as Cube;
+
+           // c.TranslationVector += Vector3.UnitZ;
+
             foreach (var figure in CubesImage.Figures)
             {
                 if (figure is Cube cube)
                 {
                     var radians = 1f.ToRadians();
-                    cube.Model *= Matrix4x4.CreateRotationX(radians);
+                    cube.RotationQuaternion *= Quaternion.CreateFromAxisAngle(Vector3.UnitX, radians);
                 }
             }
             CubesImage.InvalidateVisual();

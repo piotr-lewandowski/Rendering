@@ -12,30 +12,7 @@ namespace Rendering
             0, 0, 1, -0.5f,
             1, 0, 0, -3,
             0, 0, 0, 1);
-
-        public static Matrix4x4 ModelMatrix = Matrix4x4.Identity;
-
-        public static Matrix4x4 ModelMatrix1(float angle)
-        {
-            angle = ToRadians(angle);
-
-            return new Matrix4x4(
-                MathF.Cos(angle), -MathF.Sin(angle), 0, 0.2f,
-                MathF.Sin(angle), MathF.Cos(angle), 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1);
-        }
-
-        public static Matrix4x4 ModelMatrix2(float angle)
-        {
-            angle = ToRadians(angle);
-            return new Matrix4x4(
-                1, 0, 0, 0,
-                0, MathF.Cos(2*angle), -MathF.Sin(2*angle), 0,
-                0, MathF.Sin(2*angle), MathF.Cos(2*angle),  0,
-                0, 0, 0, 1);
-        }
-
+        
         public static Matrix4x4 ProjectionMatrix(float fov, float a, float n = 1, float f = 100)
         {
             fov = ToRadians(fov);

@@ -43,7 +43,12 @@ namespace Rendering
 
         public CubesImage()
         {
-            Figures = new Figure[] { new Cube(this, SupportMatrices.ModelMatrix1(50)), new Cube(this, SupportMatrices.ModelMatrix2(0)) };
+            Figures = new Figure[]
+            {
+                //new Cube(this), 
+                //new Cube(this),
+                new Sphere(this)
+            };
             View = SupportMatrices.ViewMatrix;
         }
 

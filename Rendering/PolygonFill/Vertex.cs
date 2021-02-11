@@ -2,7 +2,7 @@
 
 namespace Rendering.PolygonFill
 {
-    internal class Vertex
+    public class Vertex
     {
         public Vertex(Vector3 p, Vector3 normalVector)
         {

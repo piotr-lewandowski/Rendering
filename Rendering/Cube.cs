@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Numerics;
 using System.Windows.Media;
-using Rendering.PolygonFill;
 
 //model:
 //pozycja
@@ -11,43 +10,6 @@ using Rendering.PolygonFill;
 
 namespace Rendering
 {
-    public abstract class Figure
-    {
-        protected Figure(Matrix4x4 model, CubesImage canvas)
-        {
-            Model = model;
-            Canvas = canvas;
-        }
-
-        public Matrix4x4 Model { get; set; }
-        public CubesImage Canvas { get; }
-
-        public abstract void Draw();
-
-        public void Fill(Vector3 point1, Vector3 point2, Vector3 point3, Color color, Vector3 normalVector)
-        {
-            var viewVector = new Vector3(3, 0.5f, 0.5f);
-
-            var matrix = Canvas.Projection * Canvas.View * SupportMatrices.ModelMatrix;
-            var vector = new Vector4(viewVector, 1);
-
-            var resultVector = SupportMatrices.Multiply(matrix, vector);
-
-            viewVector = new Vector3(
-                (float) (resultVector.X * Canvas.ActualWidth + Canvas.ActualWidth) / 2,
-                (float) (resultVector.Y * Canvas.ActualHeight + Canvas.ActualHeight) / 2,
-                resultVector.Z);
-
-            var n = Vector3.Cross(point1 - point2, point1 - point3);
-
-            if (Vector3.Dot(point1 - viewVector, n) > 0)
-                return;
-
-            var polygon = new Polygon(new[] { point1, point2, point3 }, normalVector);
-            polygon.Fill(Canvas, color);
-        }
-    }
-
     public class Cube : Figure
     {
         public float _angle = 0f;
@@ -61,7 +23,7 @@ namespace Rendering
         public Vector3[] Points { get; set; }
         public Vector3[] NormalVectors { get; }
 
-        public Cube(CubesImage image, Matrix4x4 model) : base(model, image)
+        public Cube(CubesImage canvas) : base(canvas)
         {
             Points = new[]
             {
