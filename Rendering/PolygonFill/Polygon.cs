@@ -8,7 +8,7 @@ using System.Windows.Media;
 
 namespace Rendering.PolygonFill
 {
-    class Polygon
+    public class Polygon
     {
         public Vector3 NormalVector { get; }
         private Vertex[] _vertices;
@@ -93,45 +93,43 @@ namespace Rendering.PolygonFill
         }
 
 
-        private double Ka { get; } = 0.3d;
-        private double Kd { get; } = 0.5d;
-        private double Ks { get; } = 0.3d;
-        private double M { get; } = 10;
+        private float Ka { get; } = 0.3f;
+        private float Kd { get; } = 0.5f;
+        private float Ks { get; } = 0.3f;
+        private float M { get; } = 10;
 
         private int GetColor(Vertex vertex, Color color)
         {
-            var lightColor = Colors.White;
-            var il = new Vector3(lightColor.R, lightColor.G, lightColor.B);
-            il /= 255;
-            var toLightSource = vertex.AsVector3 - new Vector3(30, 0, 0);
-            var surfaceNormal = vertex.NormalVector;
-            var toCamera = new Vector3(3, 0.5f, 0.5f) - vertex.AsVector3;
-
-            toLightSource = -Vector3.Normalize(toLightSource);
-            surfaceNormal = Vector3.Normalize(surfaceNormal);
+            var resultIntensity = new Vector3(Ka);
+            var toCamera = _cubesImage.CurrentCamera.Target;
             toCamera = Vector3.Normalize(toCamera);
 
-            var reflected = Vector3.Reflect(toLightSource, surfaceNormal);
-            reflected = Vector3.Normalize(reflected);
+            foreach (var lightSource in _cubesImage.LightSources.Select(s => s.ToViewSpace(_cubesImage)))
+            {
+                var lightIntensity = lightSource.Intensity(vertex.AsVector3);
+                var toLightSource = lightSource.LightVector(vertex.AsVector3);
+                var surfaceNormal = vertex.NormalVector;
+                toLightSource = -Vector3.Normalize(toLightSource);
+                surfaceNormal = Vector3.Normalize(surfaceNormal);
 
-            var dot = Vector3.Dot(surfaceNormal, toLightSource);
-            dot = Math.Clamp(dot, 0, 1);
+                var reflected = Vector3.Reflect(toLightSource, surfaceNormal);
+                reflected = Vector3.Normalize(reflected);
 
-            var dot1 = Vector3.Dot(toCamera, reflected);
-            dot1 = Math.Clamp(dot1, 0, 1);
-            var pow = dot > 0 ? Math.Pow(dot1, M) : 0;
+                var diffuseAngle = Vector3.Dot(surfaceNormal, toLightSource);
+                diffuseAngle = Math.Clamp(diffuseAngle, 0, 1);
 
-            var calculatedR = Ka + Kd * il.X * dot + Ks * il.X * pow;
-            var calculatedG = Ka + Kd * il.Y * dot + Ks * il.Y * pow;
-            var calculatedB = Ka + Kd * il.Z * dot + Ks * il.Z * pow;
+                var specularAngle = Vector3.Dot(toCamera, reflected);
+                specularAngle = Math.Clamp(specularAngle, 0, 1);
+                var reflection = diffuseAngle > 0 ? MathF.Pow(specularAngle, M) : 0;
 
-            calculatedR = Math.Abs(calculatedR * color.R);
-            calculatedG = Math.Abs(calculatedG * color.G);
-            calculatedB = Math.Abs(calculatedB * color.B);
+                resultIntensity += Kd * lightIntensity * diffuseAngle + Ks * lightIntensity * reflection;
+            }
 
-            var resR = (byte) calculatedR;
-            var resG = (byte) calculatedG;
-            var resB = (byte) calculatedB;
+            resultIntensity = Vector3.Abs(resultIntensity);
+
+            var resR = (byte) (resultIntensity.X * color.R);
+            var resG = (byte) (resultIntensity.Y * color.G);
+            var resB = (byte) (resultIntensity.Z * color.B);
 
             var tmpColor = resR << 16; // R
             tmpColor |= resG << 8;   // G
