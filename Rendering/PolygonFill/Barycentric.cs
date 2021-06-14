@@ -76,21 +76,12 @@ namespace Rendering.PolygonFill
 
         public bool IsInside => (u >= 0.0f) && (u <= 1.0f) && (v >= 0.0f) && (v <= 1.0f) && (w >= 0.0f); //(w <= 1.0f)
 
-        public Vector2 Interpolate(Vector2 v1, Vector2 v2, Vector2 v3)
-        {
-            return v1 * u + v2 * v + v3 * w;
-        }
-        public Vector3 Interpolate(Vector3 v1, Vector3 v2, Vector3 v3)
-        {
-            return v1 * u + v2 * v + v3 * w;
-        }
-        public Vector4 Interpolate(Vector4 v1, Vector4 v2, Vector4 v3)
-        {
-            return v1 * u + v2 * v + v3 * w;
-        }
-        public Color Interpolate(Color v1, Color v2, Color v3)
-        {
-            return v1 * u + v2 * v + v3 * w;
-        }
+        public Vector2 Interpolate(Vector2 v1, Vector2 v2, Vector2 v3) => v1 * u + v2 * v + v3 * w;
+
+        public Vector3 Interpolate(Vector3 v1, Vector3 v2, Vector3 v3) => v1 * u + v2 * v + v3 * w;
+
+        public Vector4 Interpolate(Vector4 v1, Vector4 v2, Vector4 v3) => v1 * u + v2 * v + v3 * w;
+
+        public Color Interpolate(Color v1, Color v2, Color v3) => v1 * u + v2 * v + v3 * w;
     }
 }
