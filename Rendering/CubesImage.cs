@@ -8,12 +8,17 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Rendering.Figures;
+using Rendering.LightSource;
 
 namespace Rendering
 {
     public class CubesImage : Canvas
     {
-        public LightSource[] LightSources { get; set; }
+        public bool Fog { get; set; }
+        public bool BackFaceCulling { get; set; }
+        public ShadingMode ShadingMode { get; set; }
+        public LightSource.LightSource[] LightSources { get; set; }
+        public List<LightSource.LightSource> ActiveLightSources { get; set; }
         public Camera[] Cameras { get; set; }
         public Camera CurrentCamera { get; set; }
         public Figure[] Figures { get; set; }
@@ -28,7 +33,6 @@ namespace Rendering
             {
                 _fov = value;
                 UpdateProjectionMatrix();
-                InvalidateVisual();
             }
         }
         public float AspectRatio
@@ -38,7 +42,6 @@ namespace Rendering
             {
                 _aspectRatio = value;
                 UpdateProjectionMatrix();
-                InvalidateVisual();
             }
         }
         public WriteableBitmap Bitmap { get; set; }
@@ -47,6 +50,8 @@ namespace Rendering
 
         public CubesImage()
         {
+            BackFaceCulling = false;
+            Fog = false;
             Figures = new Figure[]
             {
                 new Cube(this, Colors.BurlyWood)
@@ -68,27 +73,30 @@ namespace Rendering
                 new Square(this, Colors.ForestGreen)
                 {
                     RotationQuaternion = Quaternion.CreateFromAxisAngle(Vector3.UnitX, -MathF.PI/2),
-                    TranslationVector = new Vector3(-1,-1,6),
-                    Scale = 5
+                    TranslationVector = new Vector3(0,0,6),
+                    Scale = 6
                 }
             };
             Cameras = new[]
             {
                 new Camera(new Vector3(5, 0.5f, 0.5f), new Vector3(0, 0.5f, 0.5f), new Vector3(0, 0, 1)),
                 new Camera(new Vector3(5, 0.5f, 0.5f), new Vector3(0, 0.5f, 0.5f), new Vector3(0, 0, 1)),
-                new Camera(new Vector3(5, 0.5f, 0.5f), new Vector3(0, 0.5f, 0.5f), new Vector3(0, 0, 1))
+                new Camera(new Vector3(5, 5f, 0.5f), new Vector3(0, 0.5f, 0.5f), new Vector3(0, 0, 1)),
+                new Camera(new Vector3(5, -5f, 0.5f), new Vector3(0, 0.5f, 0.5f), new Vector3(0, 0, 1))
             };
             CurrentCamera = Cameras[0];
-            LightSources = new[]
+            ShadingMode = ShadingMode.Constant;
+            LightSources = new LightSource.LightSource[]
             {
-                new LightSource(Colors.White, new Vector3(0, 0.5f, 0.5f))
+                new PointLight(Colors.White, new Vector3(-10, -10, 10)),
+                new DirectionalLight(Colors.White, new Vector3(0, -5, 10)),
+                new DirectionalLight(Colors.White, new Vector3(0, 5, -10)),
+                new SpotLight(Colors.White, new Vector3(1,1,-10), new Vector3(0,0,1), 30)
             };
+            ActiveLightSources = new List<LightSource.LightSource> {};
         }
 
-        void UpdateProjectionMatrix()
-        {
-            Projection = SupportMatrices.ProjectionMatrix(Fov, AspectRatio);
-        }
+        void UpdateProjectionMatrix() => Projection = Utility.ProjectionMatrix(Fov, AspectRatio);
 
         protected override void OnRender(DrawingContext dc)
         {
@@ -105,10 +113,10 @@ namespace Rendering
                     var width = Bitmap.PixelWidth;
                     var height = Bitmap.PixelHeight;
                     IntPtr pBackBuffer = Bitmap.BackBuffer;
-
-                    for (int j = 0; j < height; ++j)
+                    
+                    for (var j = 0; j < height; ++j)
                     {
-                        for (int i = 0; i < width; ++i)
+                        for (var i = 0; i < width; ++i)
                         {
                             pBackBuffer += 4;
 

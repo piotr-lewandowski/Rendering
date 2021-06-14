@@ -5,18 +5,23 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Rendering"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
-        MinWidth="300" MinHeight="400">
+        Title="MainWindow" Height="600" Width="800"
+        MinWidth="300" MinHeight="500">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition/>
-            <RowDefinition Height="100"/>
+            <RowDefinition Height="240"/>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
         <local:CubesImage  
-            x:Name="CubesImage" Grid.Row="0"/>
+            x:Name="CubesImage" Grid.Row="0" Grid.ColumnSpan="2"/>
 
-        <StackPanel Grid.Row="1" Orientation="Vertical">
+        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Vertical" Margin="10 5">
             <StackPanel Orientation="Horizontal">
+                <Label Content="FOV:" />
                 <Label Content="{Binding Value, ElementName=FovSlider}"/>
                 <Slider Name="FovSlider" Value="85"
                         ValueChanged="Fov_Slider_ValueChanged"
@@ -25,9 +30,35 @@
                         TickFrequency="1" IsSnapToTickEnabled="True"/>
 
             </StackPanel>
-            <Button Click="ChangeCamera1">Camera 1</Button>
-            <Button Click="ChangeCamera2">Camera 2</Button>
-            <Button Click="ChangeCamera3">Camera 3</Button>
+            <GroupBox Header="Cameras">
+                <StackPanel>
+                    <RadioButton Click="ChangeCamera1" GroupName="Cameras" IsChecked="True">Camera 1</RadioButton>
+                    <RadioButton Click="ChangeCamera2" GroupName="Cameras">Camera 2</RadioButton>
+                    <RadioButton Click="ChangeCamera3" GroupName="Cameras">Camera 3</RadioButton>
+                    <RadioButton Click="ChangeCamera4" GroupName="Cameras">Camera 4</RadioButton>
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Header="Shading mode">
+                <StackPanel>
+                    <RadioButton Click="ShadingConstant" GroupName="Shading" IsChecked="True">Constant</RadioButton>
+                    <RadioButton Click="ShadingGouraud" GroupName="Shading">Gouraud</RadioButton>
+                    <RadioButton Click="ShadingPhong" GroupName="Shading">Phong</RadioButton>
+                </StackPanel>
+            </GroupBox>
+            <CheckBox Margin="0 5" IsChecked="False" Checked="EnableCulling" Unchecked="DisableCulling">Back face culling</CheckBox>
+            <CheckBox Margin="0 5" IsChecked="False" Checked="EnableFog" Unchecked="DisableFog">Fog</CheckBox>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Vertical" Margin="10 5">
+            <GroupBox Header="Cameras">
+                <StackPanel>
+                    <CheckBox IsChecked="True" Checked="EnableLight1" Unchecked="DisableLight1">Point light 1</CheckBox>
+                    <CheckBox Checked="EnableLight2" Unchecked="DisableLight2">Directional light 1</CheckBox>
+                    <CheckBox Checked="EnableLight3" Unchecked="DisableLight3">Directional light 2</CheckBox>
+                    <CheckBox Checked="EnableLight4" Unchecked="DisableLight4">Spotlight 1</CheckBox>
+                </StackPanel>
+            </GroupBox>
         </StackPanel>
     </Grid>
 </Window>

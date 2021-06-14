@@ -2,26 +2,27 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Numerics;
+using System.Windows.Media;
 
 namespace Rendering
 {
-    static class SupportMatrices
+    public static class Utility
     {
-        public static Matrix4x4 ViewMatrix { get; } = new (
-            0, 1, 0, -0.5f,
-            0, 0, 1, -0.5f,
-            1, 0, 0, -3,
-            0, 0, 0, 1);
-        
         public static Matrix4x4 ProjectionMatrix(float fov, float a, float n = 1, float f = 100)
         {
             fov = ToRadians(fov);
-            return Matrix4x4.CreatePerspectiveFieldOfView(fov, a, n, f);
+            return Matrix4x4.Transpose(Matrix4x4.CreatePerspectiveFieldOfView(fov, a, n, f));
         }
 
-        public static float ToRadians(this float degrees)
+        public static float ToRadians(this float degrees) => degrees * MathF.PI / 180;
+
+        public static int ToInt(this Color color)
         {
-            return degrees * MathF.PI / 180;
+            var tmpColor = color.R << 16; // R
+            tmpColor |= color.G << 8;   // G
+            tmpColor |= color.B;   // B
+
+            return tmpColor;
         }
 
         public static Vector4 Multiply(Matrix4x4 matrix, Vector4 vector)

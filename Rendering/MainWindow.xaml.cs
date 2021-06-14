@@ -33,13 +33,13 @@ namespace Rendering
             timer.Enabled = true;
         }
 
-        private int _movementCounter = 600;
+        private int _movementCounter = 400;
 
         private void MoveScene(float a)
         {
             var c1 = CubesImage.Figures[0] as Cube; 
             var translation = new Vector3(0, 0, 0.01f);
-            if (_movementCounter >= 300)
+            if (_movementCounter >= 200)
             {
                 c1.TranslationVector += translation;
                 CubesImage.Cameras[0].Position += translation;
@@ -51,7 +51,10 @@ namespace Rendering
                 CubesImage.Cameras[0].Position -= translation;
                 CubesImage.Cameras[1].Target -= translation;
             }
-            _movementCounter = (_movementCounter + 1) % 600;
+            _movementCounter = (_movementCounter + 1) % 400;
+
+            c1.RotationQuaternion *= Quaternion.CreateFromAxisAngle(Vector3.Normalize(new Vector3(1,1,0)), 2f.ToRadians());
+
 
             var c2 = CubesImage.Figures[1] as Cube;
             c2.RotationQuaternion *= Quaternion.CreateFromAxisAngle(Vector3.UnitY, 1f.ToRadians());
@@ -62,28 +65,82 @@ namespace Rendering
             CubesImage.InvalidateVisual();
         }
 
-        private void Fov_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        #region EventHandlers
+
+        private void Fov_Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) => CubesImage.Fov = (float) e.NewValue;
+
+        private static void OnTimedEvent(object source, ElapsedEventArgs e) => _progress.Report(0);
+
+        private void ChangeCamera1(object sender, RoutedEventArgs e) => CubesImage.CurrentCamera = CubesImage.Cameras[0];
+
+        private void ChangeCamera2(object sender, RoutedEventArgs e) => CubesImage.CurrentCamera = CubesImage.Cameras[1];
+
+        private void ChangeCamera3(object sender, RoutedEventArgs e) => CubesImage.CurrentCamera = CubesImage.Cameras[2];
+
+        private void ChangeCamera4(object sender, RoutedEventArgs e) => CubesImage.CurrentCamera = CubesImage.Cameras[3];
+
+        private void ShadingPhong(object sender, RoutedEventArgs e) => CubesImage.ShadingMode = ShadingMode.Phong;
+
+        private void ShadingGouraud(object sender, RoutedEventArgs e) => CubesImage.ShadingMode = ShadingMode.Gouraud;
+
+        private void ShadingConstant(object sender, RoutedEventArgs e) => CubesImage.ShadingMode = ShadingMode.Constant;
+
+        private void EnableCulling(object sender, RoutedEventArgs e) => CubesImage.BackFaceCulling = true;
+
+        private void DisableCulling(object sender, RoutedEventArgs e) => CubesImage.BackFaceCulling = false;
+
+        private void EnableFog(object sender, RoutedEventArgs e) => CubesImage.Fog = true;
+
+        private void DisableFog(object sender, RoutedEventArgs e) => CubesImage.Fog = false;
+
+        private void EnableLight1(object sender, RoutedEventArgs e)
         {
-            CubesImage.Fov = (float) e.NewValue;
-            CubesImage.InvalidateVisual();
+            var source = CubesImage.LightSources[0];
+            CubesImage.ActiveLightSources.Add(source);
         }
 
-        private static void OnTimedEvent(object source, ElapsedEventArgs e)
+        private void DisableLight1(object sender, RoutedEventArgs e)
         {
-            _progress.Report(0);
+            var source = CubesImage.LightSources[0];
+            CubesImage.ActiveLightSources.Remove(source);
         }
 
-        private void ChangeCamera1(object sender, RoutedEventArgs e)
+        private void EnableLight2(object sender, RoutedEventArgs e)
         {
-            CubesImage.CurrentCamera = CubesImage.Cameras[0];
+            var source = CubesImage.LightSources[1];
+            CubesImage.ActiveLightSources.Add(source);
         }
-        private void ChangeCamera2(object sender, RoutedEventArgs e)
+
+        private void DisableLight2(object sender, RoutedEventArgs e)
         {
-            CubesImage.CurrentCamera = CubesImage.Cameras[1];
+            var source = CubesImage.LightSources[1];
+            CubesImage.ActiveLightSources.Remove(source);
         }
-        private void ChangeCamera3(object sender, RoutedEventArgs e)
+
+        private void EnableLight3(object sender, RoutedEventArgs e)
         {
-            CubesImage.CurrentCamera = CubesImage.Cameras[2];
+            var source = CubesImage.LightSources[2];
+            CubesImage.ActiveLightSources.Add(source);
         }
+
+        private void DisableLight3(object sender, RoutedEventArgs e)
+        {
+            var source = CubesImage.LightSources[2];
+            CubesImage.ActiveLightSources.Remove(source);
+        }
+
+        private void EnableLight4(object sender, RoutedEventArgs e)
+        {
+            var source = CubesImage.LightSources[3];
+            CubesImage.ActiveLightSources.Add(source);
+        }
+
+        private void DisableLight4(object sender, RoutedEventArgs e)
+        {
+            var source = CubesImage.LightSources[3];
+            CubesImage.ActiveLightSources.Remove(source);
+        }
+
+        #endregion
     }
 }
