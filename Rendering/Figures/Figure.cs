@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Windows.Media;
@@ -27,11 +28,25 @@ namespace Rendering.Figures
 
         public void Draw()
         {
-            var triangles = Triangles.Select(triangle => (ToProjectionSpace(triangle), Vector3.Cross(triangle.B - triangle.A, triangle.C - triangle.A)));
-            foreach (var (triangle, normal) in triangles)
+            var triangles = Triangles.Select(ToProjectionSpace);
+            foreach (var triangle in triangles)
             {
-                Fill(triangle.A, triangle.B, triangle.C, Color, Vector3.Normalize( Vector3.Cross(triangle.A - triangle.B, triangle.A - triangle.C)));
+                Fill(triangle, Color);
             }
+        }
+
+        public Vector3 NormalToProjectionSpace(Vector3 normal)
+        {
+            var matrix = Rotation;
+            var vector = new Vector4(normal, 1);
+
+            var resultVector = Utility.Multiply(matrix, vector);
+            resultVector /= resultVector.W;
+            
+            return new Vector3(
+                resultVector.X,
+                resultVector.Y,
+                resultVector.Z);
         }
 
         public Vector3 ToProjectionSpace(Vector3 original)
@@ -39,13 +54,21 @@ namespace Rendering.Figures
             var matrix = Canvas.Projection * Canvas.View * Model;
             var vector = new Vector4(original, 1);
 
-            var resultVector = SupportMatrices.Multiply(matrix, vector);
+            var resultVector = Utility.Multiply(matrix, vector);
             resultVector /= resultVector.W;
 
             return new Vector3(
                 (float) (resultVector.X * Canvas.ActualWidth + Canvas.ActualWidth) / 2,
                 (float) (resultVector.Y * Canvas.ActualHeight + Canvas.ActualHeight) / 2,
                 resultVector.Z);
+        }
+
+        public Vertex ToProjectionSpace(Vertex original)
+        {
+            return new (
+                ToProjectionSpace(original.AsVector3),
+                NormalToProjectionSpace(original.NormalVector)
+            );
         }
 
         public Triangle ToProjectionSpace(Triangle original)
@@ -57,15 +80,21 @@ namespace Rendering.Figures
             );
         }
 
-        public void Fill(Vector3 point1, Vector3 point2, Vector3 point3, Color color, Vector3 normalVector)
+        public void Fill(Triangle triangle, Color color)
         {
-            var viewVector = Canvas.CurrentCamera.Target;
+            var viewVector = Canvas.CurrentCamera.Position - Canvas.CurrentCamera.Target;
 
-            if (Vector3.Dot(viewVector, normalVector) >= 0)
+            if (Canvas.BackFaceCulling && Vector3.Dot(viewVector, triangle.A.NormalVector) >= 0)
                 return;
 
-            var polygon = new Polygon(new[] { point1, point2, point3 }, normalVector);
-            polygon.Fill(Canvas, color);
+            Polygon polygon = Canvas.ShadingMode switch
+            {
+                ShadingMode.Phong => new Phong(triangle, Canvas, color),
+                ShadingMode.Gouraud => new Gouraud(triangle, Canvas, color),
+                ShadingMode.Constant => new Constant(triangle, Canvas, color),
+                _ => throw new ArgumentOutOfRangeException($"Invalid shading mode value: {Canvas.ShadingMode}")
+            };
+            polygon.Fill();
         }
     }
 }

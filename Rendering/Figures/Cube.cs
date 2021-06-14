@@ -1,6 +1,7 @@
 ﻿using System.Windows.Media;
 using System.Linq;
 using System.Numerics;
+using Rendering.PolygonFill;
 
 namespace Rendering.Figures
 {
@@ -36,9 +37,20 @@ namespace Rendering.Figures
                 new[] {points[0], points[5], points[4]}
             };
 
-            Triangles = triangles.SelectMany(t => new Triangle(t[0], t[1], t[2]).Subdivide())
+            Triangles = triangles.SelectMany(t => ConstructTriangle(t[0], t[1], t[2]).Subdivide())
                 .SelectMany(t => t.Subdivide())
                 .SelectMany(t => t.Subdivide());
+        }
+
+        public static Triangle ConstructTriangle(Vector3 a, Vector3 b, Vector3 c)
+        {
+            var normal = Vector3.Cross(b - a, c - a);
+
+            var vertexA = new Vertex(a, normal);
+            var vertexB = new Vertex(b, normal);
+            var vertexC = new Vertex(c, normal);
+
+            return new Triangle(vertexA, vertexB, vertexC);
         }
     }
 }
