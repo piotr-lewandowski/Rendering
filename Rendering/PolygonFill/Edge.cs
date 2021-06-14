@@ -1,6 +1,6 @@
 ﻿namespace Rendering.PolygonFill
 {
-    class Edge
+    public class Edge
     {
         public Edge(Vertex start, Vertex end)
         {

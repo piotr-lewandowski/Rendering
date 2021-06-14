@@ -8,55 +8,86 @@ using System.Windows.Media;
 
 namespace Rendering.PolygonFill
 {
-    class Polygon
+    public abstract class Polygon
     {
-        protected Vertex[] _vertices;
-        protected List<Edge> _activeEdges;
-        private CubesImage cubesImage;
-        private int colorInt;
-        public Polygon(Vector3[] points)
+        public Triangle Triangle { get; }
+        public Vertex[] Vertices  { get; set; }
+        public List<Edge> ActiveEdges { get; set; }
+        public CubesImage CubesImage { get; }
+        public Color Color { get; }
+        public float Ka { get; } = 0.3f;
+        public float Kd { get; } = 0.5f;
+        public float Ks { get; } = 0.3f;
+        public float M { get; } = 40;
+        protected Polygon(Triangle triangle, CubesImage cubesImage, Color color)
         {
-            var n = points.Length;
-            _vertices = points.Select(p => new Vertex(p)).ToArray();
-
-            for (int i = 0; i < n; ++i)
-            {
-                _vertices[i].Next = i + 1 < n ? _vertices[i + 1] : _vertices[0];
-                _vertices[i].Previous = i > 0 ? _vertices[i - 1] : _vertices[n - 1];
-            }
+            Color = color;
+            Triangle = triangle;
+            CubesImage = cubesImage;
+            Vertices = triangle.AsArray();
         }
-        public void Fill(CubesImage image, Color color)
+
+        public Color CalculateColor(Vertex vertex)
         {
-            cubesImage = image;
+            var resultIntensity = new Vector3(Ka);
+            var toCamera = CubesImage.CurrentCamera.Target;
+            toCamera = Vector3.Normalize(toCamera);
 
-            int tmpColor = color.R << 16; // R
-            tmpColor |= color.G << 8;   // G
-            tmpColor |= color.B << 0;   // B
+            foreach (var lightSource in CubesImage.ActiveLightSources.Select(s => s.ToViewSpace(CubesImage)))
+            {
+                var lightIntensity = lightSource.Intensity(vertex.AsVector3);
+                var toLightSource = lightSource.LightVector(vertex.AsVector3);
+                var surfaceNormal = vertex.NormalVector;
+                toLightSource = -Vector3.Normalize(toLightSource);
+                surfaceNormal = Vector3.Normalize(surfaceNormal);
 
-            colorInt = tmpColor;
+                var reflected = Vector3.Reflect(toLightSource, surfaceNormal);
+                reflected = Vector3.Normalize(reflected);
 
-            _vertices = _vertices.OrderBy(v => v.iY).ToArray();
-            _activeEdges = new List<Edge>();
-            int n = _vertices.Length;
-            int minY = _vertices[0].iY;
-            int maxY = _vertices.Last().iY;
+                var diffuseAngle = Vector3.Dot(surfaceNormal, toLightSource);
+                diffuseAngle = Math.Clamp(diffuseAngle, 0, 1);
+
+                var specularAngle = Vector3.Dot(toCamera, reflected);
+                specularAngle = Math.Clamp(specularAngle, 0, 1);
+                var reflection = diffuseAngle > 0 ? MathF.Pow(specularAngle, M) : 0;
+
+                resultIntensity += Kd * lightIntensity * diffuseAngle + Ks * lightIntensity * reflection;
+            }
+
+            var resR = (byte) (resultIntensity.X * Color.R);
+            var resG = (byte) (resultIntensity.Y * Color.G);
+            var resB = (byte) (resultIntensity.Z * Color.B);
+
+            var fog = CubesImage.Fog
+                ? Colors.White * (vertex.AsVector3.Z - CubesImage.CurrentCamera.Position.Z)
+                : Colors.Black;
+
+            return Color.FromRgb(resR, resG, resB) + fog;
+        }
+        public void Fill()
+        {
+            Vertices = Vertices.OrderBy(v => v.iY).ToArray();
+            ActiveEdges = new List<Edge>();
+            int n = Vertices.Length;
+            int minY = Vertices[0].iY;
+            int maxY = Vertices.Last().iY;
             int j = 0;
 
             for (int currentY = minY; currentY <= maxY; ++currentY)
             {
-                while (j < n && Math.Abs(_vertices[j].iY - currentY) < 1e-3)
+                while (j < n && Vertices[j].iY <= currentY)
                 {
-                    if (_vertices[j].Next.iY >= _vertices[j].iY)
+                    if (Vertices[j].Next.iY >= Vertices[j].iY)
                     {
-                        _activeEdges.Add(new Edge(_vertices[j], _vertices[j].Next));
+                        ActiveEdges.Add(new Edge(Vertices[j], Vertices[j].Next));
                     }
-                    if (_vertices[j].Previous.iY >= _vertices[j].iY)
+                    if (Vertices[j].Previous.iY >= Vertices[j].iY)
                     {
-                        _activeEdges.Add(new Edge(_vertices[j], _vertices[j].Previous));
+                        ActiveEdges.Add(new Edge(Vertices[j], Vertices[j].Previous));
                     }
                     ++j;
                 }
-                UpdateAet(_activeEdges, currentY);
+                UpdateAet(ActiveEdges, currentY);
             }
         }
 
@@ -73,7 +104,7 @@ namespace Rendering.PolygonFill
             aet.RemoveAll(edge => edge.MaxY <= currentY);
             aet.Sort(new EdgeXComparison());
 
-            for (int i = 0; i < aet.Count - 1; i += 2)
+            for (var i = 0; i < aet.Count - 1; i += 2)
             {
                 var startX = (int) aet[i].CurrentX;
                 var endX = (int) aet[i + 1].CurrentX;
@@ -81,11 +112,11 @@ namespace Rendering.PolygonFill
                 {
                     var z = InterpolateZ(x, currentY);
                     
-                    if (x >= cubesImage.Bitmap.PixelWidth || currentY >= cubesImage.Bitmap.PixelHeight || x < 0 || currentY < 0 || !(cubesImage.ZIndex[x, currentY] > z))
+                    if (x >= CubesImage.Bitmap.PixelWidth || currentY >= CubesImage.Bitmap.PixelHeight || x < 0 || currentY < 0 || !(CubesImage.ZIndex[x, currentY] > z))
                         continue;
 
-                    cubesImage.ZIndex[x, currentY] = z;
-                    cubesImage.ColorsArray[x, currentY] = colorInt;
+                    CubesImage.ZIndex[x, currentY] = z;
+                    CubesImage.ColorsArray[x, currentY] = GetColor(x, currentY);
                 }
             }
 
@@ -95,31 +126,18 @@ namespace Rendering.PolygonFill
             }
         }
 
-        private float InterpolateZ(int x, int y)
+        public abstract int GetColor(int x, int y);
+
+        public float InterpolateZ(int x, int y)
         {
-            var p = new Point(x, y);
-            var a = new Point(_vertices[0].fX, _vertices[0].fY);
-            var b = new Point(_vertices[1].fX, _vertices[1].fY);
-            var c = new Point(_vertices[2].fX, _vertices[2].fY);
-            var v0 = b - a;
-            var v1 = c - a;
-            var v2 = p - a;
-            var d00 = Dot(v0, v0);
-            var d01 = Dot(v0, v1);
-            var d11 = Dot(v1, v1);
-            var d20 = Dot(v2, v0);
-            var d21 = Dot(v2, v1);
-            var denom = d00 * d11 - d01 * d01;
-            var v = (d11 * d20 - d01 * d21) / denom;
-            var w = (d00 * d21 - d01 * d20) / denom;
-            var u = 1.0f - v - w;
+            var p = new Vector2(x, y);
+            var a = Vertices[0].AsVector2;
+            var b = Vertices[1].AsVector2;
+            var c = Vertices[2].AsVector2;
+            var bar = new Barycentric(a, b, c, p);
 
-            return (float) (u * _vertices[0].fZ + v * _vertices[1].fZ + w * _vertices[2].fZ);
-
-            static double Dot(System.Windows.Vector a, System.Windows.Vector b)
-            {
-                return (a.X * b.X + a.Y * b.Y);
-            }
+            return bar.Interpolate(Vertices[0].AsVector3, Vertices[1].AsVector3, Vertices[2].AsVector3).Z;
         }
+
     }
 }
