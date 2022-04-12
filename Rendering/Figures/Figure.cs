@@ -65,7 +65,7 @@ public abstract class Figure
 
     public Vertex ToProjectionSpace(Vertex original) =>
         new(
-            ToProjectionSpace(original.AsVector3),
+            ToProjectionSpace(original.Position),
             NormalToProjectionSpace(original.NormalVector)
         );
 
@@ -80,18 +80,21 @@ public abstract class Figure
     {
         var viewVector = Canvas.CurrentCamera.Position - Canvas.CurrentCamera.Target;
 
-        if (Canvas.BackFaceCulling && Vector3.Dot(viewVector, triangle.A.NormalVector) >= 0)
+        if (Canvas.BackFaceCulling
+            && Vector3.Dot(viewVector, triangle.A.NormalVector) >= 0
+            && Vector3.Dot(viewVector, triangle.B.NormalVector) >= 0
+            && Vector3.Dot(viewVector, triangle.C.NormalVector) >= 0)
         {
             return;
         }
 
-        Polygon polygon = Canvas.ShadingMode switch
+        PolygonFiller polygonFiller = Canvas.ShadingMode switch
         {
             ShadingMode.Phong => new Phong(triangle, Canvas, color),
             ShadingMode.Gouraud => new Gouraud(triangle, Canvas, color),
             ShadingMode.Constant => new Constant(triangle, Canvas, color),
             _ => throw new ArgumentOutOfRangeException($"Invalid shading mode value: {Canvas.ShadingMode}")
         };
-        polygon.Fill();
+        polygonFiller.Fill();
     }
 }
