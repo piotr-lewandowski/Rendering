@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using System.Windows.Media;
 
@@ -8,6 +7,18 @@ namespace Rendering.PolygonFill;
 
 public abstract class PolygonFiller
 {
+    private static readonly Comparison<Vertex> VertexComparison = (v1, v2) => v1.iY - v2.iY;
+
+    private static readonly Comparison<ActiveEdge> ActiveEdgeComparison = (x, y) => (int)(x.CurrentX - y.CurrentX);
+
+    protected PolygonFiller(Triangle triangle, CubesImage cubesImage, Color color)
+    {
+        Color = color;
+        Triangle = triangle;
+        CubesImage = cubesImage;
+        Vertices = triangle.AsArray();
+    }
+
     public Triangle Triangle { get; }
     public Vertex[] Vertices { get; set; }
     public List<ActiveEdge> ActiveEdges { get; set; }
@@ -18,22 +29,15 @@ public abstract class PolygonFiller
     public float Ks => 0.3f;
     public float M => 40;
 
-    protected PolygonFiller(Triangle triangle, CubesImage cubesImage, Color color)
-    {
-        Color = color;
-        Triangle = triangle;
-        CubesImage = cubesImage;
-        Vertices = triangle.AsArray();
-    }
-
     public Color CalculateColor(Vertex vertex)
     {
         var resultIntensity = new Vector3(Ka);
         var toCamera = CubesImage.CurrentCamera.Target;
         toCamera = Vector3.Normalize(toCamera);
 
-        foreach (var lightSource in CubesImage.ActiveLightSources.Select(s => s.ToViewSpace(CubesImage)))
+        foreach (var lightSourceBase in CubesImage.ActiveLightSources)
         {
+            var lightSource = lightSourceBase.ToViewSpace(CubesImage);
             var lightIntensity = lightSource.Intensity(vertex.Position);
             var toLightSource = lightSource.LightVector(vertex.Position);
             var surfaceNormal = vertex.NormalVector;
@@ -66,11 +70,11 @@ public abstract class PolygonFiller
 
     public void Fill()
     {
-        Vertices = Vertices.OrderBy(v => v.iY).ToArray();
-        ActiveEdges = new List<ActiveEdge>();
+        Array.Sort(Vertices, VertexComparison);
         var n = Vertices.Length;
+        ActiveEdges = new List<ActiveEdge>(n);
         var minY = Math.Max(Vertices[0].iY, 0);
-        var maxY = Math.Min(Vertices.Last().iY, CubesImage.Bitmap.PixelHeight - 1);
+        var maxY = Math.Min(Vertices[n - 1].iY, CubesImage.Bitmap.PixelHeight - 1);
         var j = 0;
 
         for (var currentY = minY; currentY <= maxY; ++currentY)
@@ -94,15 +98,17 @@ public abstract class PolygonFiller
         }
     }
 
-    private class EdgeXComparison : Comparer<ActiveEdge>
-    {
-        public override int Compare(ActiveEdge x, ActiveEdge y) => (int)(x.CurrentX - y.CurrentX);
-    }
-
     private void UpdateAet(List<ActiveEdge> aet, int currentY)
     {
-        aet.RemoveAll(edge => edge.MaxY <= currentY);
-        aet.Sort(new EdgeXComparison());
+        for (var i = 0; i < aet.Count; i++)
+        {
+            if (aet[i].MaxY <= currentY)
+            {
+                aet.RemoveAt(i);
+            }
+        }
+
+        aet.Sort(ActiveEdgeComparison);
 
         for (var i = 0; i < aet.Count - 1; i += 2)
         {
