@@ -3,15 +3,9 @@ using System.Windows.Media;
 
 namespace Rendering.LightSource
 {
-    public abstract record LightSource
+    public abstract record LightSource(Color Color, Vector3 Position)
     {
-        protected LightSource(Color color, Vector3 position)
-        {
-            Color = color;
-            Position = position;
-        }
-        public Color Color { get; }
-        public Vector3 Position { get; set; }
+        public Vector3 Position { get; set; } = Position;
         public abstract Vector3 LightVector(Vector3 point);
         public abstract Vector3 Intensity(Vector3 point);
 
